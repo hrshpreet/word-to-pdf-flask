@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>File Upload and Conversion</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background-color: #f9f9f9;
+            color: #333;
+        }
+        .container {
+            max-width: 500px;
+            margin: 50px auto;
+            background-color: #fff;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+        h1 {
+            margin-bottom: 20px;
+            font-size: 24px;
+            color: #4CAF50;
+        }
+        .file-input-wrapper {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .custom-file-upload {
+            display: inline-block;
+            margin: 20px 0;
+            padding: 15px 30px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            text-align: center;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .custom-file-upload:hover {
+            background-color: #45a049;
+        }
+        input[type="file"] {
+            display: none;
+        }
+        .file-name {
+            margin-top: 0px;
+            font-size: 14px;
+            color: #555;
+            word-wrap: break-word;
+        }
+        button {
+            display: inline-block;
+            margin-top: 20px;
+            padding: 15px 30px;
+            background-color: #007BFF;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            text-align: center;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #f4f4f4;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        a {
+            color: #007BFF;
+            text-decoration: none;
+            font-weight: bold;
+        }
+        a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>Convert Document to PDF</h1>
+        <form id="uploadForm" action="/convert" method="post" enctype="multipart/form-data">
+            <div class="file-input-wrapper">
+                <label class="custom-file-upload">
+                    <input type="file" name="file" id="fileInput" required>
+                    Select File
+                </label>
+                <div class="file-name" id="fileName">No file selected</div>
+            </div>
+            <button type="submit">Upload and Convert</button>
+        </form>
+
+        <div class="result" id="result"></div>
+    </div>
+
+    <script>
+        const fileInput = document.getElementById('fileInput');
+        const fileNameDisplay = document.getElementById('fileName');
+        const form = document.getElementById('uploadForm');
+        const resultDiv = document.getElementById('result');
+
+        // Display the selected file name
+        fileInput.addEventListener('change', function() {
+            const fileName = fileInput.files.length > 0 ? fileInput.files[0].name : 'No file selected';
+            fileNameDisplay.textContent = fileName;
+        });
+
+        // Handle form submission via AJAX
+        form.onsubmit = async function(event) {
+            event.preventDefault();
+
+            const formData = new FormData(form);
+            resultDiv.textContent = "Processing...";
+
+            try {
+                const response = await fetch('/convert', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+                if (response.ok) {
+                    // Show the download link and metadata
+                    resultDiv.innerHTML = `
+                        <p>Conversion successful!</p>
+                        <a href="${data.output}" download>Download PDF</a>
+                        <div class="metadata">
+                            <p><strong>Author:</strong> ${data.metadata.author || 'N/A'}</p>
+                            <p><strong>Title:</strong> ${data.metadata.title || 'N/A'}</p>
+                            <p><strong>Subject:</strong> ${data.metadata.subject || 'N/A'}</p>
+                            <p><strong>Keywords:</strong> ${data.metadata.keywords || 'N/A'}</p>
+                            <p><strong>Created:</strong> ${new Date(data.metadata.created).toLocaleString() || 'N/A'}</p>
+                            <p><strong>Modified:</strong> ${new Date(data.metadata.modified).toLocaleString() || 'N/A'}</p>
+                            <p><strong>Word Count:</strong> ${data.metadata.word_count}</p>
+                            <p><strong>Paragraph Count:</strong> ${data.metadata.paragraph_count}</p>
+                            <p><strong>Size:</strong> ${(data.metadata.size / 1024).toFixed(2)} KB</p>
+                        </div>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `Error: ${data.error}`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `Error: Unable to process the request.`;
+            }
+        };
+
+    </script>
+
+</body>
+</html>
